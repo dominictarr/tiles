@@ -2,6 +2,8 @@
 
 A pure js xorg window manager, that I wrote on the plane.
 
+![screenshot](./screenshot.jpg)
+
 ## Usage - development
 
 install `Xephyr` to run another display inside your current window manager.
