@@ -1,7 +1,10 @@
 var x11 = require('x11')
 var X
-
+var Rec2 = require('rec2')
+var grid = require('vec2-layout/grid')
 var windows = []
+var all = {}
+var root
 
 var events =
     x11.eventMask.Button1Motion
@@ -11,100 +14,74 @@ var events =
   | x11.eventMask.SubstructureRedirect
   | x11.eventMask.Exposure;
 
+function each(obj, iter) {
+  for(var k in obj)
+    iter(obj[k], k, obj)
+}
+
 function layout () {
-  var width = 640 / windows.length
-  windows.forEach(function (wid, i) {
-    X.MoveWindow(wid, i * width, 0)
-    X.ResizeWindow(wid, width, 480)
+  var width = 640 / Object.keys(all).length
+  var i = 0
+  var lay = []
+  //I'm not sure what overrideRedirect is yet
+  //but browsers create them...
+
+  each(all, function (win) {
+    if((!win.attrs || !win.attrs.overrideRedirect) && win.bounds) {
+      lay.push(win.bounds)
+    }
   })
+
+  grid(lay, root.bounds)
 }
 
-var util = require('util')
-var EventEmitter = require('events').EventEmitter
-util.inherits(Window, EventEmitter)
+require('./xorg')(function (err, client, display) {
+  if(err) throw err
+  console.log(client)
 
-function Window (wid, opts) {
-  if(windows[wid]) return windows[wid]
-  if(wid == null) {
-    this.id = X.AllocID()
-    X.CreateWindow(wid, opts)
-  }
-  this.event
-  this.id = wid
-  windows[this.id] = this
-}
-
-var w = Window.prototype
-var methods = {
-  MoveWindow:   'move',
-  ResizeWindow: 'resize',
-  MapWindow:    'map',
-  ChangeWindowAttributes: 'set',
-  QueryTree: 'tree'
-}
-
-for(var name in methods) {
-  var _name = methods[name]
-  w[_name] = function () {
-    var args = [].slice.call(arguments)
-    args.unshift(this.id)
-    return X[name].apply(X, args)
-  }
-}
-
-function manage (wid) {
-  if(!~windows.indexOf(wid)) {
-    windows.push(wid)
-    X.event_consumers[wid] = X11
-  }
-  X.MapWindow(wid)
-}
-
-var X11 = x11.createClient(function (err, display) {
-  var root = display.screen[0].root
-  var client = X = display.client
-//  console.log(X)
+  var rw = client.root
+  //create a new window, but don't add it to the tree.
 
   var EV = x11.eventMask.Exposure | x11.eventMask.SubstructureRedirect
       | x11.eventMask.MapRequest | x11.eventMask.SubstructureNotify
 
-  console.log(EV.toString(2), x11.eventMask)
+  rw.set({eventMask: EV}, function(err) {
+    if (err && err.error == 10) {
+        console.error('Error: another window manager already running.');
+        process.exit(1);
+    }
+  })
 
+//    rw.children(function (err, children) {
+//      console.log('Layout')
+//      layout()
+//    })
 
-  X.ChangeWindowAttributes(root, { 
-    eventMask: 
-        EV
-    }, function(err) {
-      if (err.error == 10) {
-          console.error('Error: another window manager already running.');
-          process.exit(1);
-      }
-  });
-  X.QueryTree(root, function(err, tree) {
-      tree.children.forEach(manage);
-      layout()
-  });
+//  rw.on('MapRequest', function (ev, win) {
+//    console.log('MapRequest', win)
+//    //load the window's properties, and then lay it out.
+//    win.load(layout)
+//  })
+//  rw.on('DestroyRequest', function (ev, win) {
+//    console.log('DestroyRequest', win)
+//    layout()
+//  })
 
-//  X.
-
-}).on('event', function (ev) {
-
-  if (ev.name === 'MapRequest') {
-    windows.push(ev.wid)
-    layout ()
-    X.MapWindow(ev.wid)
-    
-    return;
-  } else if (ev.name === 'ConfigureRequest') { // ConfigureRequest
-    X.ResizeWindow(ev.wid, ev.width, ev.height);
-  } else if (ev.name === 'Expose') {
-    console.log('EXPOSE', ev);
-  } else if(ev.name === 'DestroyNotify') {
-    console.log('DESTROY', ev)
-    var i = windows.indexOf(ev.wid)
-    windows.splice(i, 1)
-    layout()
-  } else {
-    console.log("OTHER", ev)
-  }
 })
+//.on('event', function (ev) {
+//  if (ev.name === 'MapRequest') {
+//    windows.push(ev.wid)
+//    //track the new window...
+//    var w = createWindow(ev.wid).load(function (err) {
+//      layout ()
+//      w.map()
+//    })
+//    
+//    return;
+//  } else if (ev.name === 'ConfigureRequest') { // ConfigureRequest
+//     X.ResizeWindow(ev.wid, ev.width, ev.height);
+//  } else if(ev.name === 'DestroyNotify') {
+//    delete all[ev.wid1]
+//    layout()
+//  }
+// })
