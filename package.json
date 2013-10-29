@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "observable": "~1.4.1",
-    "hyperscript": "~1.1.0"
+    "hyperscript": "~1.1.0",
+    "vec2-layout": "~0.1.0",
+    "x11": "~0.3.0",
+    "rec2": "~1.1.0"
   },
   "devDependencies": {
     "console-log": "~1.0.0"
