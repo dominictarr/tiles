@@ -13,6 +13,7 @@ module.exports = function (cb) {
   function createWindow (wid) {
     if(all[wid]) return all[wid]
     if(null == wid) {
+      throw new Error('create window!')
       wid = X.AllocID()
       X.createWindow(wid)
     }
@@ -62,7 +63,7 @@ module.exports = function (cb) {
     })
 
     this.getBounds(function (err, bounds) {
-      self.bounds = bounds
+      //self.bounds = bounds
       self.bounds = new Rec2(bounds.posX, bounds.posY, bounds.width, bounds.height)
       self.bounds.change(function () {
         self.move(self.bounds.x, self.bounds.y)
@@ -77,20 +78,26 @@ module.exports = function (cb) {
 
   w.children = function (cb) {
     var self = this
-    self.children = []
+    self._children = []
     this.tree(function (err, tree) {
       var n = tree.children.length
+      console.log(tree)
+
+      if(n === 0)
+        return n = 1, next()
+
       tree.children.forEach(function (wid) {
         var w = createWindow(wid).load(function (err) {
           if(err) next(err)
-          self.children.push(w)
+          self._children.push(w)
+          next()
         })
       });
-
+      
       function next (err) {
-        if(err) return n = -1
+        if(err) return n = -1, cb(err)
         if(--n) return
-        cb(null, self.children)
+        cb(null, self._children)
       }
 
     })
@@ -103,23 +110,30 @@ module.exports = function (cb) {
       throw new Error('must be number, was:' + wid)
     if(all[wid]) return all[wid]
     if(null == wid) {
+      throw new Error('CREATE WINDOW', wid)
       wid = X.AllocID()
-      X.createWindow(wid)
+      X.CreateWindow(wid)
     }
     return all[wid] = new Window(wid)
   }
 
   X = x11.createClient(function (err, display) {
     if(err) return cb(err)
-    var client = display
+//    var client = display
     var rid = display.screen[0].root
     var root = createWindow(+rid).load(function (_err) {
       display.root = root
-      console.log(display)
+      console.log('ROOT')
       cb(err, display, display)
     })
     X.on('event', function (ev) {
-      var win = createWindow(ev.wid1 || ev.wid)
+      console.log('event', ev.name)
+      console.log(ev)
+      var wid = (ev.wid1 || ev.wid), win
+
+      if(wid)
+        win = createWindow(wid)
+
       if(ev.name === 'DestroyNotify') {
         delete all[ev.wid1]
       }

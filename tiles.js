@@ -3,7 +3,6 @@ var X
 var Rec2 = require('rec2')
 var grid = require('vec2-layout/grid')
 var windows = []
-var all = {}
 var root
 
 var events =
@@ -19,27 +18,29 @@ function each(obj, iter) {
     iter(obj[k], k, obj)
 }
 
-function layout () {
-  var width = 640 / Object.keys(all).length
-  var i = 0
-  var lay = []
-  //I'm not sure what overrideRedirect is yet
-  //but browsers create them...
-
-  each(all, function (win) {
-    if((!win.attrs || !win.attrs.overrideRedirect) && win.bounds) {
-      lay.push(win.bounds)
-    }
-  })
-
-  grid(lay, root.bounds)
-}
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
-  console.log(client)
-
+//  console.log(client)
+  var all = {}
   var rw = client.root
+
+  function layout () {
+    var width = 640 / Object.keys(all).length
+    var i = 0
+    var lay = []
+    //I'm not sure what overrideRedirect is yet
+    //but browsers create them...
+
+    each(all, function (win) {
+      if((!win.attrs || !win.attrs.overrideRedirect) && win.bounds) {
+        lay.push(win.bounds)
+      }
+    })
+    console.log(lay, all)
+    grid(lay, rw.bounds)
+  }
+
   //create a new window, but don't add it to the tree.
 
   var EV = x11.eventMask.Exposure | x11.eventMask.SubstructureRedirect
@@ -52,22 +53,34 @@ require('./xorg')(function (err, client, display) {
     }
   })
 
-//    rw.children(function (err, children) {
-//      console.log('Layout')
-//      layout()
-//    })
+  console.log('children')
+  rw.children(function (err, children) {
+    children.forEach(function (w) { all[w.id] = w })
+    layout()
+  })
 
-//  rw.on('MapRequest', function (ev, win) {
-//    console.log('MapRequest', win)
-//    //load the window's properties, and then lay it out.
-//    win.load(layout)
-//  })
-//  rw.on('DestroyRequest', function (ev, win) {
-//    console.log('DestroyRequest', win)
-//    layout()
-//  })
-
+  rw.on('MapRequest', function (ev, win) {
+    console.log('MapRequest', win)
+    //load the window's properties, and then lay it out.
+    win.load(function () {
+      all[win.id] = win
+      win.map()
+      layout()
+    })
+  })
+  rw.on('DestroyNotify', function (ev, win) {
+    console.log('DestroyNotify', win)
+    delete all[win.id]
+    layout()
+  })
+  rw.on('ConfigureRequest', function (ev, win) {
+    if(win.bounds)
+      win.bounds.size.set(ev.width, ev.height)
+    else
+      win.resize(ev.width, ev.height)
+  })
 })
+
 //.on('event', function (ev) {
 //  if (ev.name === 'MapRequest') {
 //    windows.push(ev.wid)
