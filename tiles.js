@@ -45,7 +45,7 @@ require('./xorg')(function (err, client, display) {
 
   var EV = x11.eventMask.Exposure | x11.eventMask.SubstructureRedirect
       | x11.eventMask.MapRequest | x11.eventMask.SubstructureNotify
-
+      | x11.eventMask.KeyPress
   rw.set({eventMask: EV}, function(err) {
     if (err && err.error == 10) {
         console.error('Error: another window manager already running.');
@@ -78,6 +78,11 @@ require('./xorg')(function (err, client, display) {
       win.bounds.size.set(ev.width, ev.height)
     else
       win.resize(ev.width, ev.height)
+  })
+
+  rw.on('KeyPress', function (ev) {
+    require('child_process').spawn(process.env.TERM || 'xterm')
+
   })
 })
 
