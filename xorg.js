@@ -1,3 +1,7 @@
+//I want to make this into a convienent api for working with X.
+//my aim to be to make it browserify where possible,
+//so that your expectations from web development apply.
+
 var x11 = require('x11')
 var Rec2 = require('rec2')
 
