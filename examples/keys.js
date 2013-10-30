@@ -1,4 +1,4 @@
-var xorg = require('./xorg')
+var xorg = require('../xorg')
 var x11 = require('x11')
 
 //NOTE, THIS ONLY WORKS WHEN RUNNING WITH Xephyr
