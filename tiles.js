@@ -56,32 +56,31 @@ require('./xorg')(function (err, client, display) {
     }
   })
 
+  function manage (win) {
+    console.log('manage', win)
+    all[win.id] = win
+    if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
+      tiles.push(win)
+      if(!focused) focused = win
+      win.on('MouseOver', function () {
+        return
+        console.log('focused!', win.id)
+        focused = win
+        win.focus()
+      })
+    }
+  }
+
   rw.children(function (err, children) {
-    children.forEach(function (win) {
-      all[win.id] = win
-      if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
-        tiles.push(win)
-        win.on('MouseOver', function () {
-          console.log('focused!', win.id)
-          focused = win
-          win.focus()
-        })
-      }
-    })
+    children.forEach(manage)
     layout()
   })
 
   rw.on('MapRequest', function (ev, win) {
     //load the window's properties, and then lay it out.
     win.load(function () {
-      all[win.id] = win
-      tiles.push(win)
+      manage(win)
       win.map()
-      win.on('MouseOver', function () {
-        console.log('focused!', win.id)
-        focused = win
-        win.focus()
-      })
       layout()
     })
 
@@ -92,6 +91,8 @@ require('./xorg')(function (err, client, display) {
     console.log('DestroyNotify', win)
     delete all[win.id]
     remove(tiles, win)
+    if(win === focused)
+      focused = relative(tiles, win, -1).focus()
     layout()
 
     //UGLY HACK AROUND STRANGE ERROR WHERE
@@ -108,8 +109,6 @@ require('./xorg')(function (err, client, display) {
   })
 
   var spawn = require('child_process').spawn
-
-  rw.on('MouseOver', console.log)
 
   //open terminal
   //Command-T/K
@@ -137,6 +136,71 @@ require('./xorg')(function (err, client, display) {
     if(ev.down) {
       console.log('SWITCH LAYOUT')
       tiling = !tiling
+      layout()
+    }
+  })
+
+  function relative(ary, item, dir) {
+    var i = ary.indexOf(item)
+    if(~i) {
+      i = i + dir
+      if(i < 0)
+        i = ary.length + i
+      if(i >= ary.length)
+        i = i - ary.length
+      var w = tiles[i]
+      return w
+    }
+  }
+
+  function swap (ary, a, b) {
+    var i = ary.indexOf(a)
+    var j = ary.indexOf(b)
+    console.log('SWAP', i, j, ary.length - 1)
+    if(i === 0 && j === ary.length - 1) {
+      ary.push(ary.shift())
+    }
+    else if(j === 0 && i === ary.length - 1) {
+      ary.unshift(ary.pop())
+    }
+    else {
+      ary[i] = b
+      ary[j] = a
+    }
+    return ary
+  }
+  
+  //Command-Left
+  rw.onKey(0x40, 113, function (ev) {
+    if(ev.down) {
+      var f = relative(tiles, focused, -1)
+      if(f) focused = f.focus()
+    }
+  })
+  rw.onKey(0x40, 114, function (ev) {
+    if(ev.down) {
+      var f = relative(tiles, focused, 1)
+      if(f) focused = f.focus()
+    }
+  })
+
+  //Command-Left
+  rw.onKey(0x41, 113, function (ev) {
+    if(ev.down) {
+      if(!focused) focused = tiles[0].focus()
+      var _focused = relative(tiles, focused, -1)
+      console.log('F,_F', focused.id, _focused.id)
+      swap(tiles, focused, _focused)
+  //    focused = _focused.focus()
+      layout()
+    }
+  })
+  rw.onKey(0x41, 114, function (ev) {
+    if(ev.down) {
+      if(!focused) focused = tiles[0].focus()
+      var _focused = relative(tiles, focused, 1)
+      console.log('F,_F', focused.id, _focused.id)
+      swap(tiles, focused, _focused)
       layout()
     }
   })
