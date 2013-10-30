@@ -45,7 +45,7 @@ require('./xorg')(function (err, client, display) {
 
   var EV = x11.eventMask.Exposure | x11.eventMask.SubstructureRedirect
       | x11.eventMask.MapRequest | x11.eventMask.SubstructureNotify
-      | x11.eventMask.KeyPress
+//      | x11.eventMask.KeyPress
   rw.set({eventMask: EV}, function(err) {
     if (err && err.error == 10) {
         console.error('Error: another window manager already running.');
@@ -80,26 +80,23 @@ require('./xorg')(function (err, client, display) {
       win.resize(ev.width, ev.height)
   })
 
-  rw.on('KeyPress', function (ev) {
-    require('child_process').spawn(process.env.TERM || 'xterm')
+  var spawn = require('child_process').spawn
 
+  //open terminal
+  rw.onKey(0x40, 45, function (ev) {
+    if(ev.down)
+      spawn(process.env.TERM || 'xterm')
+  })  
+  rw.onKey(0x40, 31, function (ev) {
+    if(ev.down)
+      spawn(process.env.BROWSER || 'chromium')
+  })  
+  rw.onKey(0x40, 9, function (ev) {
+    if(ev.down) {
+      console.log('quiting...')
+      process.exit(0)
+    }
   })
+
 })
 
-//.on('event', function (ev) {
-//  if (ev.name === 'MapRequest') {
-//    windows.push(ev.wid)
-//    //track the new window...
-//    var w = createWindow(ev.wid).load(function (err) {
-//      layout ()
-//      w.map()
-//    })
-//    
-//    return;
-//  } else if (ev.name === 'ConfigureRequest') { // ConfigureRequest
-//     X.ResizeWindow(ev.wid, ev.width, ev.height);
-//  } else if(ev.name === 'DestroyNotify') {
-//    delete all[ev.wid1]
-//    layout()
-//  }
-// })
