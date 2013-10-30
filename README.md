@@ -47,7 +47,7 @@ Type=Application
 
 This was easy becase of [x11](http://ghub.io/x11),
 and what I had learnt hacking on [nwm](https://github.com/mixu/nwm)
-I would also never have done this if [gb](http://gwenbell.com) and (eb)[http://evbogue.com/)1
+I would also never have done this if [gb](http://gwenbell.com) and [eb](http://evbogue.com/)
 hadn't helped me install archlinux (and escape OSX)
 
 ## TODO
