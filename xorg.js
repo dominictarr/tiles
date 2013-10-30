@@ -46,14 +46,13 @@ module.exports = function (cb) {
     ChangeWindowAttributes: 'set',
     QueryTree: 'tree',
     GetWindowAttributes: 'get',
-    GetGeometry: 'getBounds'
+    GetGeometry: 'getBounds',
   }
 
   each(methods, function (_name, name) {
     w[_name] = function () {
       var args = [].slice.call(arguments)
       args.unshift(this.id)
-      console.log(name, args)
       return X[name].apply(X, args)
     }
   })
@@ -85,7 +84,6 @@ module.exports = function (cb) {
     self._children = []
     this.tree(function (err, tree) {
       var n = tree.children.length
-      console.log(tree)
 
       if(n === 0)
         return n = 1, next()
@@ -119,7 +117,22 @@ module.exports = function (cb) {
 
   w.offKey = function (mod, key) {
     X.GrabKey(this.id, 0, mod, key)
+    return this
+  }
 
+  w.focus = function (revert) {
+    X.SetInputFocus(this.id, revert || 2)
+    return this
+  }
+
+  w.kill = function () {
+    X.KillKlient(this.id)
+    return this
+  }
+
+  w.close = function () {
+    X.DestroyWindow(this.id)
+    return this
   }
 
   function createWindow (wid) {
@@ -127,16 +140,16 @@ module.exports = function (cb) {
       throw new Error('must be number, was:' + wid)
     if(all[wid]) return all[wid]
     if(null == wid) {
-      throw new Error('CREATE WINDOW', wid)
-      wid = X.AllocID()
-      X.CreateWindow(wid)
+      //FIX THIS
+      throw new Error("unknown window "+ wid)
+      //wid = X.AllocID()
+      //X.CreateWindow(wid)
     }
     return all[wid] = new Window(wid)
   }
   var _ev
   X = x11.createClient(function (err, display) {
     if(err) return cb(err)
-//    var client = display
     var rid = display.screen[0].root
     var root = createWindow(+rid).load(function (_err) {
       display.root = root
@@ -145,13 +158,15 @@ module.exports = function (cb) {
     display.createWindow = createWindow
 
     X.on('event', function (ev) {
+
+      //BUG IN x11? events are triggered twice!
       if(_ev === ev) return
       _ev = ev
+
       var wid = (ev.wid1 || ev.wid), win
 
       if(wid)
         win = createWindow(wid)
-
       if(ev.name === 'KeyPress' || ev.name === 'KeyRelease') {
         var listener = kb[ev.buttons.toString(16) + '-' + ev.keycode.toString(16)]
         ev.down = ev.name === 'KeyPress'
@@ -162,8 +177,16 @@ module.exports = function (cb) {
       if(ev.name === 'DestroyNotify') {
         delete all[ev.wid1]
       }
+
       if(!root)
         throw new Error('no root')
+
+      if(ev.name === 'EnterWindow')
+        ev.name = 'MouseOver'
+
+      if(win) {
+        win.emit(ev.name, ev)
+      }
       root.emit(ev.name, ev, win)
     })
 
