@@ -108,6 +108,19 @@ module.exports = function (cb) {
     return this
   }
 
+  var kb = {}
+
+  w.onKey = function (mod, key, listener) {
+    kb[mod.toString('16') + '-' + key.toString(16)] = listener
+    //window, parentWindow?, modifier, key, ?, async (0 = blocking)
+    X.GrabKey(this.id, 0, mod, key, 0, 1)
+    return this
+  }
+
+  w.offKey = function (mod, key) {
+    X.GrabKey(this.id, 0, mod, key)
+
+  }
 
   function createWindow (wid) {
     if(wid != null && 'number' != typeof wid)
@@ -120,23 +133,31 @@ module.exports = function (cb) {
     }
     return all[wid] = new Window(wid)
   }
-
+  var _ev
   X = x11.createClient(function (err, display) {
     if(err) return cb(err)
 //    var client = display
     var rid = display.screen[0].root
     var root = createWindow(+rid).load(function (_err) {
       display.root = root
-      console.log('ROOT')
       cb(err, display, display)
     })
+    display.createWindow = createWindow
+
     X.on('event', function (ev) {
-      console.log('event', ev.name)
-      console.log(ev)
+      if(_ev === ev) return
+      _ev = ev
       var wid = (ev.wid1 || ev.wid), win
 
       if(wid)
         win = createWindow(wid)
+
+      if(ev.name === 'KeyPress' || ev.name === 'KeyRelease') {
+        var listener = kb[ev.buttons.toString(16) + '-' + ev.keycode.toString(16)]
+        ev.down = ev.name === 'KeyPress'
+        ev.up = !ev.down
+        if(listener) listener(ev)
+      }
 
       if(ev.name === 'DestroyNotify') {
         delete all[ev.wid1]
