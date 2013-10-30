@@ -36,6 +36,8 @@ require('./xorg')(function (err, client, display) {
 
     each(all, function (win) {
       if((!win.attrs || !win.attrs.overrideRedirect) && win.bounds) {
+        if(!focused)
+          focused = win.focus()
         lay.push(win.bounds)
       }
     })
@@ -68,7 +70,6 @@ require('./xorg')(function (err, client, display) {
   })
 
   rw.on('MapRequest', function (ev, win) {
-    console.log('MapRequest', win)
     //load the window's properties, and then lay it out.
     win.load(function () {
       all[win.id] = win
@@ -88,6 +89,11 @@ require('./xorg')(function (err, client, display) {
     console.log('DestroyNotify', win)
     delete all[win.id]
     layout()
+
+    //UGLY HACK AROUND STRANGE ERROR WHERE
+    //KB SHORTCUTS STOP WORKING WHEN YOU CLOSE ALL THE WINDOWS
+    if(!Object.keys(all).length)
+      spawn(process.env.TERM || 'xterm')
   })
 
   rw.on('ConfigureRequest', function (ev, win) {
@@ -106,10 +112,12 @@ require('./xorg')(function (err, client, display) {
     if(ev.down)
       spawn(process.env.TERM || 'xterm')
   })  
+
   rw.onKey(0x40, 31, function (ev) {
     if(ev.down)
       spawn(process.env.BROWSER || 'chromium')
   })  
+
   rw.onKey(0x40, 9, function (ev) {
     if(ev.down) {
       console.log('quiting...')
