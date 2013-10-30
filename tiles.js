@@ -18,14 +18,20 @@ function each(obj, iter) {
     iter(obj[k], k, obj)
 }
 
+function remove (array, item) {
+  var i = array.indexOf(item)
+  if(~i) array.splice(i, 1)
+}
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
-//  console.log(client)
+
+  var tiles = []
   var all = {}
   var rw = client.root
 
   var focused = null
+  var tiling = true
 
   function layout () {
     var width = 640 / Object.keys(all).length
@@ -34,14 +40,7 @@ require('./xorg')(function (err, client, display) {
     //I'm not sure what overrideRedirect is yet
     //but browsers create them...
 
-    each(all, function (win) {
-      if((!win.attrs || !win.attrs.overrideRedirect) && win.bounds) {
-        if(!focused)
-          focused = win.focus()
-        lay.push(win.bounds)
-      }
-    })
-    grid(lay, rw.bounds)
+    grid(tiles.map(function (e) {return e.bounds}), rw.bounds)
   }
 
   //create a new window, but don't add it to the tree.
@@ -60,11 +59,14 @@ require('./xorg')(function (err, client, display) {
   rw.children(function (err, children) {
     children.forEach(function (win) {
       all[win.id] = win
-      win.on('MouseOver', function () {
-        console.log('focused!', win.id)
-        focused = win
-        win.focus()
-      })
+      if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
+        tiles.push(win)
+        win.on('MouseOver', function () {
+          console.log('focused!', win.id)
+          focused = win
+          win.focus()
+        })
+      }
     })
     layout()
   })
@@ -73,6 +75,7 @@ require('./xorg')(function (err, client, display) {
     //load the window's properties, and then lay it out.
     win.load(function () {
       all[win.id] = win
+      tiles.push(win)
       win.map()
       win.on('MouseOver', function () {
         console.log('focused!', win.id)
@@ -88,6 +91,7 @@ require('./xorg')(function (err, client, display) {
   rw.on('DestroyNotify', function (ev, win) {
     console.log('DestroyNotify', win)
     delete all[win.id]
+    remove(tiles, win)
     layout()
 
     //UGLY HACK AROUND STRANGE ERROR WHERE
@@ -108,22 +112,35 @@ require('./xorg')(function (err, client, display) {
   rw.on('MouseOver', console.log)
 
   //open terminal
+  //Command-T/K
   rw.onKey(0x40, 45, function (ev) {
     if(ev.down)
       spawn(process.env.TERM || 'xterm')
   })  
 
+  //Command-C/I
   rw.onKey(0x40, 31, function (ev) {
     if(ev.down)
       spawn(process.env.BROWSER || 'chromium')
   })  
 
+  //Command-Esc
   rw.onKey(0x40, 9, function (ev) {
     if(ev.down) {
       console.log('quiting...')
       process.exit(0)
     }
   })
+
+  //Command-Space
+  rw.onKey(0x40, 65, function (ev) {
+    if(ev.down) {
+      console.log('SWITCH LAYOUT')
+      tiling = !tiling
+      layout()
+    }
+  })
+
   function close (ev) {
     if(ev.down && focused) {
       var _focused = focused
