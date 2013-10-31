@@ -1,6 +1,7 @@
 var x11 = require('x11')
 var X
 var Rec2 = require('rec2')
+var Vec2 = require('vec2')
 var grid = require('vec2-layout/grid')
 var windows = []
 var root
@@ -23,8 +24,16 @@ function remove (array, item) {
   if(~i) array.splice(i, 1)
 }
 
+function find (ary, test) {
+  for(var i in ary)
+    if(test(ary[i], i, ary))
+      return ary[i]
+}
+
 require('./xorg')(function (err, client, display) {
   if(err) throw err
+
+  var mouse = new Vec2(0, 0)
 
   var tiles = []
   var all = {}
@@ -56,6 +65,8 @@ require('./xorg')(function (err, client, display) {
     }
   })
 
+  var focusDelay = 0
+
   function manage (win) {
     console.log('manage', win)
     all[win.id] = win
@@ -63,7 +74,8 @@ require('./xorg')(function (err, client, display) {
       tiles.push(win)
       if(!focused) focused = win
       win.on('MouseOver', function () {
-        return
+      
+        if(focusDelay > Date.now()) return
         console.log('focused!', win.id)
         focused = win
         win.focus()
@@ -85,10 +97,10 @@ require('./xorg')(function (err, client, display) {
     })
 
     win.set({eventMask: x11.eventMask.EnterWindow}, console.log)
+
   })
 
   rw.on('DestroyNotify', function (ev, win) {
-    console.log('DestroyNotify', win)
     delete all[win.id]
     remove(tiles, win)
     if(win === focused)
@@ -156,7 +168,9 @@ require('./xorg')(function (err, client, display) {
   function swap (ary, a, b) {
     var i = ary.indexOf(a)
     var j = ary.indexOf(b)
-    console.log('SWAP', i, j, ary.length - 1)
+    //if the window is the first or last, do not swap,
+    //instead shift/pop so that overall order is preserved.
+
     if(i === 0 && j === ary.length - 1) {
       ary.push(ary.shift())
     }
@@ -174,12 +188,14 @@ require('./xorg')(function (err, client, display) {
   rw.onKey(0x40, 113, function (ev) {
     if(ev.down) {
       var f = relative(tiles, focused, -1)
+      focusDelay = Date.now() + 100
       if(f) focused = f.focus()
     }
   })
   rw.onKey(0x40, 114, function (ev) {
     if(ev.down) {
       var f = relative(tiles, focused, 1)
+      focusDelay = Date.now() + 100
       if(f) focused = f.focus()
     }
   })
@@ -188,6 +204,7 @@ require('./xorg')(function (err, client, display) {
   rw.onKey(0x41, 113, function (ev) {
     if(ev.down) {
       if(!focused) focused = tiles[0].focus()
+      focusDelay = Date.now() + 100
       var _focused = relative(tiles, focused, -1)
       console.log('F,_F', focused.id, _focused.id)
       swap(tiles, focused, _focused)
@@ -195,9 +212,11 @@ require('./xorg')(function (err, client, display) {
       layout()
     }
   })
+
   rw.onKey(0x41, 114, function (ev) {
     if(ev.down) {
       if(!focused) focused = tiles[0].focus()
+      focusDelay = Date.now() + 100
       var _focused = relative(tiles, focused, 1)
       console.log('F,_F', focused.id, _focused.id)
       swap(tiles, focused, _focused)
@@ -215,6 +234,5 @@ require('./xorg')(function (err, client, display) {
 
   rw.onKey(0x40, 53, close) //command-Q
   rw.onKey(0x40, 59, close) //command-W
-
 })
 
