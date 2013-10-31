@@ -1,64 +1,14 @@
 var x11 = require('x11')
 var X
-var Rec2 = require('rec2')
-var Vec2 = require('vec2')
-var grid = require('vec2-layout/grid')
-var windows = []
-var root
-
-var events =
-    x11.eventMask.Button1Motion
-  | x11.eventMask.ButtonPress
-  | x11.eventMask.ButtonRelease
-  | x11.eventMask.SubstructureNotify
-  | x11.eventMask.SubstructureRedirect
-  | x11.eventMask.Exposure;
-  
-function each(obj, iter) {
-  for(var k in obj)
-    iter(obj[k], k, obj)
-}
-
-function remove (array, item) {
-  var i = array.indexOf(item)
-  if(~i) array.splice(i, 1)
-}
-
-function find (ary, test) {
-  for(var i in ary)
-    if(test(ary[i], i, ary))
-      return ary[i]
-}
-
 
 var Layout = require('./layout')
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
 
-  var mouse = new Vec2(0, 0)
-
-  var tiles = []
-  var all = {}
   var rw = client.root
 
-  var focused = null
-  var tiling = true
-
   var l = new Layout(rw)
-
-  console.log(l)
-
-  function layout () {
-    return l.layout()
-    if(tiling)
-      grid(tiles.map(function (e) {return e.bounds}), rw.bounds)
-    else {
-      focused.raise()
-      focused.bounds.set(rw.bounds)
-      focused.bounds.size.set(rw.bounds.size)
-    }
-  }
 
   //create a new window, but don't add it to the tree.
 
@@ -67,54 +17,28 @@ require('./xorg')(function (err, client, display) {
       | x11.eventMask.EnterWindow
 
   rw.set({eventMask: EV}, function(err) {
-    console.log('rw', set)
     if (err && err.error == 10) {
         console.error('Error: another window manager already running.');
         process.exit(1);
     }
   })
 
-  var focusDelay = 0
-
-  function manage (win) {
-    return l.add(win)
-    
-    console.log('manage', win)
-    all[win.id] = win
-    if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
-      tiles.push(win)
-      if(!focused) focused = win
-      win.on('MouseOver', function () {
-      
-        if(focusDelay > Date.now()) return
-        console.log('focused!', win.id)
-        focused = win
-        win.focus()
-      })
-    }
-  }
-
   rw.children(function (err, children) {
-    console.log('children', children)
     children.forEach(l.add.bind(l))
     l.layout()
   })
 
   rw.on('MapRequest', function (ev, win) {
     //load the window's properties, and then lay it out.
-    console.log('map', win)
     win.load(function () {
-
       l.add(win)
-      //manage(win)
       win.map()
       l.layout()
     })
-    win.set({eventMask: x11.eventMask.EnterWindow}, console.log)
+    win.set({eventMask: x11.eventMask.EnterWindow})
   })
 
   rw.on('DestroyNotify', function (ev, win) {
-    console.log('DESTROY NOTIFY', win.id)
     l.remove(win)
     //UGLY HACK AROUND STRANGE ERROR WHERE
     //KB SHORTCUTS STOP WORKING WHEN YOU CLOSE ALL THE WINDOWS
@@ -135,7 +59,6 @@ require('./xorg')(function (err, client, display) {
   //open terminal
   //Command-T/K
   rw.onKey(0x40, 45, function (ev) {
-    console.log('TERM')
     if(ev.down)
       spawn(process.env.TERM || 'xterm')
   })  
@@ -156,98 +79,29 @@ require('./xorg')(function (err, client, display) {
 
   //Command-Space
   rw.onKey(0x40, 65, function (ev) {
-    if(ev.down) {
-      console.log('SWITCH LAYOUT')
-//      focusDelay = Date.now() + 100
-      l.toggle()
-      return
-      tiling = !tiling
-      layout()
-    }
+    if(ev.down) l.toggle()
   })
-
-  function relative(ary, item, dir) {
-    var i = ary.indexOf(item)
-    if(~i) {
-      i = i + dir
-      if(i < 0)
-        i = ary.length + i
-      if(i >= ary.length)
-        i = i - ary.length
-      var w = tiles[i]
-      return w
-    }
-  }
-
-  function swap (ary, a, b) {
-    var i = ary.indexOf(a)
-    var j = ary.indexOf(b)
-    //if the window is the first or last, do not swap,
-    //instead shift/pop so that overall order is preserved.
-
-    if(i === 0 && j === ary.length - 1) {
-      ary.push(ary.shift())
-    }
-    else if(j === 0 && i === ary.length - 1) {
-      ary.unshift(ary.pop())
-    }
-    else {
-      ary[i] = b
-      ary[j] = a
-    }
-    return ary
-  }
   
   //Command-Left
   rw.onKey(0x40, 113, function (ev) {
-    if(ev.down) {
-      return l.cycle(-1)
-      var f = relative(tiles, focused, -1)
-      focusDelay = Date.now() + 100
-      if(f) focused = f.focus()
-      layout()
-    }
+    if(ev.down) l.cycle(-1)
   })
   rw.onKey(0x40, 114, function (ev) {
-    if(ev.down) {
-      return l.cycle(1)
-      var f = relative(tiles, focused, 1)
-      focusDelay = Date.now() + 100
-      if(f) focused = f.focus()
-      layout()
-    }
+    if(ev.down) l.cycle(1)
   })
 
   //Command-Left
   rw.onKey(0x41, 113, function (ev) {
-    if(ev.down) {
-      return l.move(-1)
-      if(!focused) focused = tiles[0].focus()
-      focusDelay = Date.now() + 100
-      var _focused = relative(tiles, focused, -1)
-      console.log('F,_F', focused.id, _focused.id)
-      swap(tiles, focused, _focused)
-  //    focused = _focused.focus()
-      layout()
-    }
+    if(ev.down) l.move(-1)
   })
 
   rw.onKey(0x41, 114, function (ev) {
-    if(ev.down) {
-      return l.move(1)
-      if(!focused) focused = tiles[0].focus()
-      focusDelay = Date.now() + 100
-      var _focused = relative(tiles, focused, 1)
-      console.log('F,_F', focused.id, _focused.id)
-      swap(tiles, focused, _focused)
-      layout()
-    }
+    if(ev.down) l.move(1)
   })
 
   function close (ev) {
     if(ev.down && l.focused) {
       var _focused = l.focused
-      console.log('close!', l.focused.id)
       l.cycle(-1)
       _focused.close()
     }
