@@ -30,6 +30,9 @@ function find (ary, test) {
       return ary[i]
 }
 
+
+var Layout = require('./layout')
+
 require('./xorg')(function (err, client, display) {
   if(err) throw err
 
@@ -42,7 +45,12 @@ require('./xorg')(function (err, client, display) {
   var focused = null
   var tiling = true
 
+  var l = new Layout(rw)
+
+  console.log(l)
+
   function layout () {
+    return l.layout()
     if(tiling)
       grid(tiles.map(function (e) {return e.bounds}), rw.bounds)
     else {
@@ -59,6 +67,7 @@ require('./xorg')(function (err, client, display) {
       | x11.eventMask.EnterWindow
 
   rw.set({eventMask: EV}, function(err) {
+    console.log('rw', set)
     if (err && err.error == 10) {
         console.error('Error: another window manager already running.');
         process.exit(1);
@@ -68,6 +77,8 @@ require('./xorg')(function (err, client, display) {
   var focusDelay = 0
 
   function manage (win) {
+    return l.add(win)
+    
     console.log('manage', win)
     all[win.id] = win
     if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
@@ -84,36 +95,35 @@ require('./xorg')(function (err, client, display) {
   }
 
   rw.children(function (err, children) {
-    children.forEach(manage)
-    layout()
+    console.log('children', children)
+    children.forEach(l.add.bind(l))
+    l.layout()
   })
 
   rw.on('MapRequest', function (ev, win) {
     //load the window's properties, and then lay it out.
+    console.log('map', win)
     win.load(function () {
-      manage(win)
+
+      l.add(win)
+      //manage(win)
       win.map()
-      layout()
+      l.layout()
     })
-
     win.set({eventMask: x11.eventMask.EnterWindow}, console.log)
-
   })
 
   rw.on('DestroyNotify', function (ev, win) {
-    delete all[win.id]
-    remove(tiles, win)
-    if(win === focused)
-      focused = relative(tiles, win, -1).focus()
-    layout()
-
+    console.log('DESTROY NOTIFY', win.id)
+    l.remove(win)
     //UGLY HACK AROUND STRANGE ERROR WHERE
     //KB SHORTCUTS STOP WORKING WHEN YOU CLOSE ALL THE WINDOWS
-    if(!Object.keys(all).length)
+    if(!l.tiles.length)
       spawn(process.env.TERM || 'xterm')
   })
 
   rw.on('ConfigureRequest', function (ev, win) {
+    //prevent windows from sizing themselves?
     if(win.bounds)
       win.bounds.size.set(ev.width, ev.height)
     else
@@ -125,6 +135,7 @@ require('./xorg')(function (err, client, display) {
   //open terminal
   //Command-T/K
   rw.onKey(0x40, 45, function (ev) {
+    console.log('TERM')
     if(ev.down)
       spawn(process.env.TERM || 'xterm')
   })  
@@ -147,7 +158,9 @@ require('./xorg')(function (err, client, display) {
   rw.onKey(0x40, 65, function (ev) {
     if(ev.down) {
       console.log('SWITCH LAYOUT')
-      focusDelay = Date.now() + 100
+//      focusDelay = Date.now() + 100
+      l.toggle()
+      return
       tiling = !tiling
       layout()
     }
@@ -188,6 +201,7 @@ require('./xorg')(function (err, client, display) {
   //Command-Left
   rw.onKey(0x40, 113, function (ev) {
     if(ev.down) {
+      return l.cycle(-1)
       var f = relative(tiles, focused, -1)
       focusDelay = Date.now() + 100
       if(f) focused = f.focus()
@@ -196,6 +210,7 @@ require('./xorg')(function (err, client, display) {
   })
   rw.onKey(0x40, 114, function (ev) {
     if(ev.down) {
+      return l.cycle(1)
       var f = relative(tiles, focused, 1)
       focusDelay = Date.now() + 100
       if(f) focused = f.focus()
@@ -206,6 +221,7 @@ require('./xorg')(function (err, client, display) {
   //Command-Left
   rw.onKey(0x41, 113, function (ev) {
     if(ev.down) {
+      return l.move(-1)
       if(!focused) focused = tiles[0].focus()
       focusDelay = Date.now() + 100
       var _focused = relative(tiles, focused, -1)
@@ -218,6 +234,7 @@ require('./xorg')(function (err, client, display) {
 
   rw.onKey(0x41, 114, function (ev) {
     if(ev.down) {
+      return l.move(1)
       if(!focused) focused = tiles[0].focus()
       focusDelay = Date.now() + 100
       var _focused = relative(tiles, focused, 1)
@@ -228,9 +245,10 @@ require('./xorg')(function (err, client, display) {
   })
 
   function close (ev) {
-    if(ev.down && focused) {
-      var _focused = focused
-      focused = null
+    if(ev.down && l.focused) {
+      var _focused = l.focused
+      console.log('close!', l.focused.id)
+      l.cycle(-1)
       _focused.close()
     }
   }
