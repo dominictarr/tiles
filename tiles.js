@@ -43,13 +43,13 @@ require('./xorg')(function (err, client, display) {
   var tiling = true
 
   function layout () {
-    var width = 640 / Object.keys(all).length
-    var i = 0
-    var lay = []
-    //I'm not sure what overrideRedirect is yet
-    //but browsers create them...
-
-    grid(tiles.map(function (e) {return e.bounds}), rw.bounds)
+    if(tiling)
+      grid(tiles.map(function (e) {return e.bounds}), rw.bounds)
+    else {
+      focused.raise()
+      focused.bounds.set(rw.bounds)
+      focused.bounds.size.set(rw.bounds.size)
+    }
   }
 
   //create a new window, but don't add it to the tree.
@@ -147,6 +147,7 @@ require('./xorg')(function (err, client, display) {
   rw.onKey(0x40, 65, function (ev) {
     if(ev.down) {
       console.log('SWITCH LAYOUT')
+      focusDelay = Date.now() + 100
       tiling = !tiling
       layout()
     }
@@ -190,6 +191,7 @@ require('./xorg')(function (err, client, display) {
       var f = relative(tiles, focused, -1)
       focusDelay = Date.now() + 100
       if(f) focused = f.focus()
+      layout()
     }
   })
   rw.onKey(0x40, 114, function (ev) {
@@ -197,6 +199,7 @@ require('./xorg')(function (err, client, display) {
       var f = relative(tiles, focused, 1)
       focusDelay = Date.now() + 100
       if(f) focused = f.focus()
+      layout()
     }
   })
 
