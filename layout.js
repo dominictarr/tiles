@@ -1,5 +1,6 @@
-
 var grid = require('vec2-layout/grid')
+
+var styles = require('./styles')
 
 module.exports = Layout
 function each(obj, iter) {
@@ -61,6 +62,7 @@ function Layout (root) {
   this.focused
   this.tiling = true
   this.delay = 100
+  this.layouts = [styles.tile, styles.tab, styles.cascade]
 }
 
 var l = Layout.prototype
@@ -79,6 +81,14 @@ l.add = function (win) {
         self.focused = win
         win.focus()
       })
+      //really, should use FocusChange here,
+      //but I don't know how to distinguish between
+      //getting and loosing focus.
+      win.on('focus', function (ev) {
+        console.log(ev)
+        win.raise()
+      })
+
     }
   return this
 }
@@ -118,17 +128,13 @@ l.move = function (dir) { //1 or -1
 }
 
 l.layout = function () {
-    if(this.tiling)
-      grid(this.tiles.map(function (e) {return e.bounds}), this.root.bounds)
-    else if(this.focused) {
-      this.focused.raise()
-      this.focused.bounds.set(this.root.bounds)
-      this.focused.bounds.size.set(this.root.bounds.size)
-    }
+  this.layouts[0].call(this)
 }
 
 l.toggle = function () {
-  this.tiling = !this.tiling
+  //cycle layouts
+  this.layouts.push(this.layouts.shift())
+  //this.tiling = !this.tiling
   this._delay = Date.now() + this.delay
   this.layout()
   return this
