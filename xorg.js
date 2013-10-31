@@ -121,7 +121,8 @@ module.exports = function (cb) {
   }
 
   w.focus = function (revert) {
-    X.SetInputFocus(this.id, revert || 0)
+    X.SetInputFocus(this.id, revert || 1)
+    this.emit('focus')
     return this
   }
 
