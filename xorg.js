@@ -43,6 +43,7 @@ module.exports = function (cb) {
     MoveWindow:   'move',
     ResizeWindow: 'resize',
     MapWindow:    'map',
+    UnmapWindow:    'unmap',
     ChangeWindowAttributes: 'set',
     QueryTree: 'tree',
     GetWindowAttributes: 'get',
