@@ -12,9 +12,7 @@ function each(obj, iter) {
 
 function remove (array, item) {
   var i = array.indexOf(item)
-  console.log(array.map(function (e) { return e.id}), i)
   if(~i) array.splice(i, 1)
-  console.log(array, '-')
 }
 
 function find (ary, test) {
