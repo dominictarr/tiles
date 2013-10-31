@@ -135,6 +135,11 @@ module.exports = function (cb) {
     return this
   }
 
+  w.raise = function () {
+    X.RaiseWindow(this.id)
+    return this
+  }
+
   function createWindow (wid) {
     if(wid != null && 'number' != typeof wid)
       throw new Error('must be number, was:' + wid)
