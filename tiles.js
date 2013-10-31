@@ -2,13 +2,23 @@ var x11 = require('x11')
 var X
 
 var Layout = require('./layout')
+var u      = require('./utils')
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
 
   var rw = client.root
 
-  var l = new Layout(rw)
+  var layouts = [new Layout(rw), new Layout(rw), new Layout(rw)]
+
+  var l = layouts[0]
+
+  function cycleLayout(dir) {
+    l._delay = Date.now() + l.delay
+    l.hide()
+    l = u.relative(layouts, l, dir || 1)
+    l.show()
+  }
 
   //create a new window, but don't add it to the tree.
 
@@ -24,13 +34,17 @@ require('./xorg')(function (err, client, display) {
   })
 
   rw.children(function (err, children) {
-    children.forEach(l.add.bind(l))
+    children.forEach(function (win) {
+      win.kill()
+      l.remove(win)
+    })
     l.layout()
   })
 
   rw.on('MapRequest', function (ev, win) {
     //load the window's properties, and then lay it out.
     win.load(function () {
+      //add to current layout
       l.add(win)
       win.map()
       l.layout()
@@ -97,6 +111,14 @@ require('./xorg')(function (err, client, display) {
 
   rw.onKey(0x41, 114, function (ev) {
     if(ev.down) l.move(1)
+  })
+
+  rw.onKey(0x40, 111, function (ev) {
+    if(ev.down) cycleLayout(1)
+  })
+
+  rw.onKey(0x40, 116 , function (ev) {
+    if(ev.down) cycleLayout(-1)
   })
 
   function close (ev) {
