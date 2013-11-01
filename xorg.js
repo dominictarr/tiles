@@ -197,5 +197,7 @@ module.exports = function (cb) {
       root.emit(ev.name, ev, win)
     })
 
+  }).on('error', function (err) {
+    console.error(err.stack)
   })
 }
