@@ -9,7 +9,7 @@ require('./xorg')(function (err, client, display) {
 
   var rw = client.root
 
-  var layouts = [new Layout(rw), new Layout(rw), new Layout(rw)]
+  var layouts = [new Layout(rw)]
 
   var l = layouts[0]
 
@@ -45,8 +45,10 @@ require('./xorg')(function (err, client, display) {
     //load the window's properties, and then lay it out.
     win.load(function () {
       //add to current layout
-      l.add(win)
       win.map()
+      l.add(win)
+      win.focus()
+      win.raise()
       l.layout()
     })
     win.set({eventMask: x11.eventMask.EnterWindow})
@@ -121,6 +123,15 @@ require('./xorg')(function (err, client, display) {
     if(ev.down) cycleLayout(-1)
   })
 
+  //Ctrl-N
+  rw.onKey(0x40, 46 , function (ev) {
+    if(!ev.down) return
+    console.log('new layout')
+    l.hide()
+    layouts.push(l = new Layout(rw))
+    l.show()
+  })
+
   function close (ev) {
     if(ev.down && l.focused) {
       var _focused = l.focused
@@ -129,7 +140,17 @@ require('./xorg')(function (err, client, display) {
     }
   }
 
+  function closeLayout () {
+    var _l = u.relative(layouts, l, -1)
+    if(layouts.length <= 1) return
+    l.hide()
+    if(layouts.length) u.remove(layouts, l.closeAll())
+    l = _l
+    _l.show()
+  }
+
   rw.onKey(0x40, 53, close) //command-Q
   rw.onKey(0x40, 59, close) //command-W
+  rw.onKey(0x41, 59, closeLayout) //command-W
 })
 
