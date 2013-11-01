@@ -94,6 +94,12 @@ l.toggle = function () {
   return this
 }
 
+l.closeAll = function () {
+  this.tiles.forEach(function (e) {
+    e.close()
+  })
+}
+
 //hide all windows.
 l.hide = function () {
   this.tiles.forEach(function (e) { e.unmap() })
