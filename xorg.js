@@ -69,12 +69,13 @@ module.exports = function (cb) {
 
     this.getBounds(function (err, bounds) {
       //self.bounds = bounds
-      self.bounds = new Rec2(bounds.posX, bounds.posY, bounds.width, bounds.height)
-      self.bounds.change(function () {
-        self.move(self.bounds.x, self.bounds.y)
+      var b = self.bounds =
+        new Rec2(bounds.posX, bounds.posY, bounds.width, bounds.height)
+      b.change(function () {
+        self.move(b.x, b.y)
       })
       self.bounds.size.change(function () {
-        self.resize(self.bounds.size.x, self.bounds.size.y)
+        self.resize(b.size.x, b.size.y)
       })
       if(self.attrs && self.bounds) cb()
     })
