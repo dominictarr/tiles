@@ -58,8 +58,8 @@ require('./xorg')(function (err, client, display) {
     l.remove(win)
     //UGLY HACK AROUND STRANGE ERROR WHERE
     //KB SHORTCUTS STOP WORKING WHEN YOU CLOSE ALL THE WINDOWS
-    if(!l.tiles.length)
-      spawn(process.env.TERM || 'xterm')
+//    if(!l.tiles.length)
+  //    spawn(process.env.TERM || 'xterm')
   })
 
   rw.on('ConfigureRequest', function (ev, win) {
@@ -133,18 +133,30 @@ require('./xorg')(function (err, client, display) {
   })
 
   function close (ev) {
+    if(l.tiles.length === 0) {
+      if(layouts.length === 1) {
+        console.log('all windows are closed')
+        process.exit(0)
+      }
+      return closeLayout(ev)
+    }
     if(ev.down && l.focused) {
       var _focused = l.focused
+      //if there are no tiles in this layout,
+      //close the space.
+      if(l.tiles.length > 1)
       l.cycle(-1)
       _focused.close()
     }
   }
 
-  function closeLayout () {
+  function closeLayout (ev) {
+    if(!ev.down) return
     var _l = u.relative(layouts, l, -1)
     if(layouts.length <= 1) return
     l.hide()
-    if(layouts.length) u.remove(layouts, l.closeAll())
+    l.closeAll()
+    if(layouts.length) u.remove(layouts, l)
     l = _l
     _l.show()
   }
