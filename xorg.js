@@ -48,6 +48,7 @@ module.exports = function (cb) {
     QueryTree: 'tree',
     GetWindowAttributes: 'get',
     GetGeometry: 'getBounds',
+    ConfigureWindow: 'configure'
   }
 
   each(methods, function (_name, name) {
