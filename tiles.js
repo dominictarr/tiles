@@ -7,7 +7,7 @@ var u      = require('./utils')
 require('./xorg')(function (err, client, display) {
   if(err) throw err
 
-  var rw = client.root
+  var rw = client.root, _prevFocus
 
   var layouts = [new Layout(rw)]
 
@@ -45,6 +45,13 @@ require('./xorg')(function (err, client, display) {
     //load the window's properties, and then lay it out.
     win.load(function () {
       //add to current layout
+      win.configure({borderWidth: 1})
+      win.on('focus', function () {
+        if(_prevFocus)
+          _prevFocus.set({ borderPixel: 0x0 })
+        win.set({borderPixel: 0xffff00})
+        _prevFocus = win
+      })
       win.map()
       l.add(win)
       win.focus()
