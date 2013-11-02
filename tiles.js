@@ -3,7 +3,7 @@ var X
 
 var Layout = require('./layout')
 var u      = require('./utils')
-var animate = require('./animate')
+var animate = require('vec2-animate')
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
