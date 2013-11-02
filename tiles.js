@@ -3,6 +3,7 @@ var X
 
 var Layout = require('./layout')
 var u      = require('./utils')
+var animate = require('./animate')
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
@@ -45,6 +46,9 @@ require('./xorg')(function (err, client, display) {
     //load the window's properties, and then lay it out.
     win.load(function () {
       //add to current layout
+      var b = win.bounds
+      win.bounds = animate(b)
+      win.bounds.size = animate(b.size)
       win.configure({borderWidth: 1})
       win.on('focus', function () {
         if(_prevFocus)
