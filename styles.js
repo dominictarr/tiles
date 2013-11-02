@@ -1,16 +1,30 @@
 
+function bounds (e) {
+  return e.bounds || e
+}
+
 //even tiling
+
+
 
 var grid = require('vec2-layout/grid')
 exports.tile = function () {
-  grid(this.tiles.map(function (e) { return e.bounds }), this.root.bounds)
+  grid(this.tiles.map(bounds), this.root.bounds)
 }
 
 exports.tab = function () {
   if(!this.focused) return
   this.focused.raise()
-  this.focused.bounds.set(this.root.bounds)
-  this.focused.bounds.size.set(this.root.bounds.size)
+  var center = this.tiles.indexOf(this.focused)
+  var width = this.root.bounds.size.x
+  var height = this.root.bounds.size.y
+  this.tiles.map(bounds).forEach(function (e, i) {
+    e.set(( i - center) * width, 0)
+    e.size.set(width, height)
+  })
+
+//  this.focused.bounds.set(this.root.bounds)
+//  this.focused.bounds.size.set(this.root.bounds.size)
 }
 
 exports.cascade = function () {
