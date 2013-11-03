@@ -12,7 +12,7 @@ function Layout (root) {
   this.tiles = []
   this.focused
   this.tiling = true
-  this.delay = 100
+  this.delay = 200
   this.layouts = [styles.tile, styles.tab, styles.cascade]
 }
 
