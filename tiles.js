@@ -3,7 +3,7 @@ var X
 
 var Layout = require('./layout')
 var u      = require('./utils')
-var animate = require('vec2-animate')
+var ease   = require('vec2-easing')
 
 require('./xorg')(function (err, client, display) {
   if(err) throw err
@@ -47,8 +47,8 @@ require('./xorg')(function (err, client, display) {
     win.load(function () {
       //add to current layout
       var b = win.bounds
-      win.bounds = animate(b)
-      win.bounds.size = animate(b.size)
+      win.bounds = ease(b, 300)
+      win.bounds.size = ease(b.size, 300)
       win.configure({borderWidth: 1})
       win.on('focus', function () {
         if(_prevFocus)
