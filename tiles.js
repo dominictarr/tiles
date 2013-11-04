@@ -18,12 +18,9 @@ require('./xorg')(function (err, client, display) {
     Randr.SelectInput(rw.id, Randr.NotifyMask.ScreenChange);
   });
 
-  rw.on('RRScreenChangeNotify', function(ev, win) {
-    console.log(ev);
-    if(win.bounds)
-      win.bounds.size.set(ev.width, ev.height)
-    else
-      win.resize(ev.width, ev.height)
+  rw.on('RRScreenChangeNotify', function(ev) {
+    console.log(rw);
+    rw.bounds.size.set(ev.width, ev.height)
     l.layout();
   });
 
