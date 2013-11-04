@@ -14,6 +14,15 @@ require('./xorg')(function (err, client, display) {
 
   var l = layouts[0]
 
+  client.client.require('randr', function(Randr) {
+    Randr.SelectInput(rw.id, Randr.NotifyMask.ScreenChange);
+  });
+
+  rw.on('RRScreenChangeNotify', function(ev) {
+    rw.bounds.size.set(ev.width, ev.height)
+    l.layout();
+  });
+
   function cycleLayout(dir) {
     l._delay = Date.now() + l.delay
     l.hide()

@@ -8,10 +8,11 @@
     "url": "git://github.com/dominictarr/tiles.git"
   },
   "dependencies": {
-    "vec2-layout": "~0.1.0",
-    "x11": "git@github.com:sidorares/node-x11.git#7fc33f3bab14f8e23dcb431d02afeb2210654bc4",
+    "vec2-layout": "~0.1.1",
     "rec2": "~1.1.0",
-    "vec2-animate": "~1.0.1"
+    "vec2-animate": "~1.0.1",
+    "x11": "~0.4.0",
+    "vec2-easing": "~1.0.1"
   },
   "devDependencies": {
     "console-log": "~1.0.0"
