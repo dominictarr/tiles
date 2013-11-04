@@ -19,7 +19,6 @@ require('./xorg')(function (err, client, display) {
   });
 
   rw.on('RRScreenChangeNotify', function(ev) {
-    console.log(rw);
     rw.bounds.size.set(ev.width, ev.height)
     l.layout();
   });
