@@ -56,8 +56,8 @@ require('./xorg')(function (err, client, display) {
     win.load(function () {
       //add to current layout
       var b = win.bounds
-      win.bounds = ease(b, 300)
-      win.bounds.size = ease(b.size, 300)
+      win.bounds = ease(b, 300, 30)
+      win.bounds.size = ease(b.size, 300, 30)
       win.configure({borderWidth: 1})
       win.on('focus', function () {
         if(_prevFocus)
