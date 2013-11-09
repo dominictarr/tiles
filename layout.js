@@ -13,7 +13,7 @@ function Layout (root) {
   this.focused
   this.tiling = true
   this.delay = 200
-  this.layouts = [styles.tile, styles.tab, styles.cascade]
+  this.layouts = [styles.tile, styles.tab/*, styles.cascade*/]
 }
 
 var l = Layout.prototype
