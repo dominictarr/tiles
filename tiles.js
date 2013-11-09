@@ -9,10 +9,22 @@ require('./xorg')(function (err, client, display) {
   if(err) throw err
 
   var rw = client.root, _prevFocus
-
+  var mouse = client.mouse
   var layouts = [new Layout(rw)]
 
   var l = layouts[0]
+
+  mouse.change(function () {
+    for(var i in l.tiles) {
+      var v = l.tiles[i]
+      if(v && v.bounds && v.bounds.contains(mouse)) {
+        console.log(v === l.focused)
+        if(v !== l.focused)
+          v.focus()
+//        console.log('OVER:', v)
+      }
+    }
+  })
 
   client.client.require('randr', function(Randr) {
     Randr.SelectInput(rw.id, Randr.NotifyMask.ScreenChange);
@@ -57,13 +69,17 @@ require('./xorg')(function (err, client, display) {
       //add to current layout
       var b = win.bounds
       win.bounds = ease(b, 300, 30)
+      win.bounds.__proto__ = b
       win.bounds.size = ease(b.size, 300, 30)
-      win.configure({borderWidth: 1})
+      win.bounds.size.__proto__ = b.size
+  
+    win.configure({borderWidth: 1})
       win.on('focus', function () {
         if(_prevFocus)
           _prevFocus.set({ borderPixel: 0x0 })
         win.set({borderPixel: 0xffff00})
         _prevFocus = win
+        l.focused = win
       })
       win.map()
       l.add(win)
@@ -71,7 +87,7 @@ require('./xorg')(function (err, client, display) {
       win.raise()
       l.layout()
     })
-    win.set({eventMask: x11.eventMask.EnterWindow})
+//    win.set({eventMask: x11.eventMask.EnterWindow})
   })
 
   rw.on('DestroyNotify', function (ev, win) {
