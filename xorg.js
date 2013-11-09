@@ -4,6 +4,7 @@
 
 var x11 = require('x11')
 var Rec2 = require('rec2')
+var Vec2 = require('vec2')
 
 module.exports = function (cb) {
   var X
@@ -160,8 +161,21 @@ module.exports = function (cb) {
   X = x11.createClient(function (err, display) {
     if(err) return cb(err)
     var rid = display.screen[0].root
+
+    var mouse = new Vec2(0, 0)
+    mouse.change(function () {
+      console.log(mouse.toJSON())
+    })
+    setInterval(function () {
+      X.QueryPointer(rid, function (err, m) {
+        mouse.set(m.rootX, m.rootY)
+      })
+    }, 200)
+
     var root = createWindow(+rid).load(function (_err) {
+
       display.root = root
+      display.mouse = mouse
       cb(err, display, display)
     })
     display.createWindow = createWindow
