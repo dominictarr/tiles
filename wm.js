@@ -17,19 +17,13 @@ var dragStart = null;
 util.inherits(Window, EventEmitter)
 
 //create a nicer window abstraction.
-function Window (wid) {
-  if(!wid)
-  
-}
 
 function ManageWindow(wid) {
-  console.log("MANAGE WINDOW: " + wid);
   X.GetWindowAttributes(wid, function(err, attrs) {
 
     if (attrs[8]) // override-redirect flag
     {
       // don't manage
-      console.log("don't manage");
       X.MapWindow(wid);
       return;
     }
@@ -42,10 +36,9 @@ function ManageWindow(wid) {
 
     X.GetGeometry(wid, function(err, clientGeom) {
 
-      console.log("window geometry: ", clientGeom);
       var width = clientGeom.width + 4;
       var height = clientGeom.height + 24;
-      console.log("CreateWindow", fid, root, winX, winY, width, height);
+
       X.CreateWindow(fid, root, winX, winY, width, height, 0, 0, 0, 0,
       {
         backgroundPixel: white,
@@ -66,7 +59,7 @@ function ManageWindow(wid) {
       X.event_consumers[fid] = ee;
 
       ee.on('event', function(ev) {
-        console.log(['event', ev]);
+
         if (ev.type === 17) // DestroyNotify
         {
            X.DestroyWindow(fid);
@@ -86,7 +79,7 @@ function ManageWindow(wid) {
 
       X.ChangeSaveSet(1, wid);
       X.ReparentWindow(wid, fid, 1, 21);
-      console.log("MapWindow", fid);
+
       X.MapWindow(fid);
       X.MapWindow(wid);
     });
@@ -102,7 +95,6 @@ x11.createClient(function(err, display) {
 
     root = display.screen[0].root;
     white = display.screen[0].white_pixel;
-    console.log('root = ' + root);
 
     X.ChangeWindowAttributes(root, { 
       eventMask: 
@@ -137,7 +129,7 @@ x11.createClient(function(err, display) {
 }).on('error', function(err) {
     console.error(err);
 }).on('event', function(ev) {
-    console.log(ev);
+
     if (ev.type === 20) {       // MapRequest
         if (!frames[ev.wid])
             ManageWindow(ev.wid);
@@ -146,9 +138,8 @@ x11.createClient(function(err, display) {
     {
         X.ResizeWindow(ev.wid, ev.width, ev.height);
     } else if (ev.type === 12) {
-        console.log('EXPOSE', ev);
+
         X.Render.Composite(3, X.bggrad, 0, X.rootpic, 0, 0, 0, 0, 0, 0, 1000, 1000);
     }
-    console.log(ev);
 
 });
