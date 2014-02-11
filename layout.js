@@ -19,9 +19,9 @@ function Layout (root) {
 var l = Layout.prototype
 
 l.add = function (win) {
-    console.log('add', win)
     var self = this
     this.all[win.id] = win
+
     if(win.bounds && win.attrs && !win.attrs.overrideRedirect) {
       this.tiles.push(win)
       if(!this.focused) this.focused = win
@@ -30,7 +30,7 @@ l.add = function (win) {
         if(self._delay > Date.now()) return
         if(win === self.focused) return
         self._delay = Date.now() + self.delay/2
-        console.log('focused! (MouseOver)', win.id)
+
         self.focused = win
         win.focus()
       })
@@ -38,7 +38,7 @@ l.add = function (win) {
       //but I don't know how to distinguish between
       //getting and loosing focus.
       win.on('focus', function (ev) {
-        console.log('FOCUS!', ev)
+
         //if the window is mapped
         win.raise()
       })
@@ -48,7 +48,7 @@ l.add = function (win) {
 }
 
 l.remove = function (win) {
-  console.log('remove', win.id)
+
   if(!win)
     win = this.focused
   delete this.all[win.id]
