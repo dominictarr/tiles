@@ -19,14 +19,14 @@ DISPLAY=:1 node tiles.js
 
 ## Usage - production
 
+first, install globally `npm install -g tiles`
+
 my `~/.xinit` looks like this:
 
 ```
-xmodmap -e "pointer = 1 2 3 5 4"
 setxkbmap -layout dvorak
-#exec dwm
-xterm &
-exec node ./c/tiles/tiles.js > tiles.log
+export TERM='xterm -fn=7x13 -rv'
+exec node /home/dominic/c/tiles/tiles.js > tiles.log
 ```
 
 On my setup, I login on a bare terminal, and then start my window manager with `startx`.
@@ -38,7 +38,7 @@ If you use `ubuntu` or something with a shishi login screen you can add the foll
 Encoding=UTF-8
 Name=tiles
 Comment=This session starts tiles
-Exec=/PATH/TO/tiles.sh
+Exec=/PATH/TO/tiles.js
 Type=Application
 ```
 (that is what [nwm](https://github.com/mixu/nwm) suggests, so that will probably work)
