@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 var x11 = require('x11')
 var X
 
@@ -106,20 +108,26 @@ require('./xorg')(function (err, client, display) {
       win.resize(ev.width, ev.height)
   })
 
-  var spawn = require('child_process').spawn
+  var _spawn = require('child_process').spawn
+
+  function spawn (cmd) {
+    var args = cmd.split(/\s+/)
+    cmd = args.shift()
+    _spawn(cmd, args)
+  }
 
   //open terminal
   //Command-T/K
   rw.onKey(0x40, 45, function (ev) {
     if(ev.down)
       spawn(process.env.TERM || 'xterm')
-  })  
+  })
 
   //Command-C/I
   rw.onKey(0x40, 31, function (ev) {
     if(ev.down)
       spawn(process.env.BROWSER || 'chromium')
-  })  
+  })
 
   //Command-Esc
   rw.onKey(0x40, 9, function (ev) {
