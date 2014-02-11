@@ -3,6 +3,8 @@
 var x11 = require('x11')
 var X
 
+var config = require('./config')
+
 var Layout = require('./layout')
 var u      = require('./utils')
 var ease   = require('vec2-easing')
@@ -70,9 +72,9 @@ require('./xorg')(function (err, client, display) {
     win.load(function () {
       //add to current layout
       var b = win.bounds
-      win.bounds = ease(b, 300, 30)
+      win.bounds = ease(b, config.easing, config.frameRate)
       win.bounds.__proto__ = b
-      win.bounds.size = ease(b.size, 300, 30)
+      win.bounds.size = ease(b.size, config.easing, config.frameRate)
       win.bounds.size.__proto__ = b.size
   
     win.configure({borderWidth: 1})
