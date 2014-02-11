@@ -43,6 +43,12 @@ Type=Application
 ```
 (that is what [nwm](https://github.com/mixu/nwm) suggests, so that will probably work)
 
+## Configuration
+
+tiles uses [rc](https://github.com/dominictarr/rc) to manage it's configuration.
+see `./config.js` for default settings. Currently only animation time and framerate
+are configurable. TODO: keyboard commands.
+
 ## Acknowledgements
 
 This was easy becase of [x11](http://ghub.io/x11),
